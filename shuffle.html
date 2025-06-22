@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fisher-Yates Algorithm Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            max-width: 1400px;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .animation-box, .code-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .animation-box {
+            flex: 1;
+            min-height: 500px;
+        }
+
+        .code-box {
+            flex: 1;
+            min-height: 500px;
+        }
+
+        .box-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .array-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .array-element {
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .array-element.current {
+            background: #ff6b6b;
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(255,107,107,0.4);
+        }
+
+        .array-element.selected {
+            background: #4ecdc4;
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(78,205,196,0.4);
+        }
+
+        .array-element.swapping {
+            background: #ffa726;
+            transform: scale(1.2);
+            box-shadow: 0 8px 20px rgba(255,167,38,0.4);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .code-container {
+            background: #2d3748;
+            border-radius: 10px;
+            padding: 20px;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            display: block;
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            white-space: pre;
+        }
+
+        .code-line.highlight {
+            background: #4a5568;
+            border-left: 4px solid #667eea;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .code-line.executing {
+            background: #2d5a87;
+            border-left: 4px solid #4299e1;
+            transform: translateX(4px);
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { background: #2d5a87; }
+            to { background: #3182ce; }
+        }
+
+        .keyword { color: #f56565; }
+        .function { color: #68d391; }
+        .variable { color: #90cdf4; }
+        .comment { color: #a0aec0; font-style: italic; }
+        .number { color: #fbb6ce; }
+
+        .info-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #333;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">Fisher-Yates Shuffle Algorithm</h1>
+    
+    <div class="container">
+        <div class="animation-box">
+            <h2 class="box-title">🎯 Animation</h2>
+            
+            <div class="info-panel">
+                <h3>Current State:</h3>
+                <div class="status" id="status">Ready to start</div>
+            </div>
+            
+            <div class="array-container" id="arrayContainer">
+                <!-- Array elements will be generated here -->
+            </div>
+            
+            <div class="controls">
+                <button class="btn" onclick="startShuffle()">Start Shuffle</button>
+                <button class="btn" onclick="resetArray()">Reset Array</button>
+                <button class="btn" onclick="generateNewArray()">New Array</button>
+            </div>
+            
+            <div class="info-panel">
+                <h3>Legend:</h3>
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="array-element" style="width: 30px; height: 30px; font-size: 0.8rem;">N</div>
+                        <span>Normal</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="array-element current" style="width: 30px; height: 30px; font-size: 0.8rem;">C</div>
+                        <span>Current Index</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="array-element selected" style="width: 30px; height: 30px; font-size: 0.8rem;">R</div>
+                        <span>Random Index</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="array-element swapping" style="width: 30px; height: 30px; font-size: 0.8rem;">S</div>
+                        <span>Swapping</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-box">
+            <h2 class="box-title">💻 Code Execution</h2>
+            
+            <div class="code-container">
+                <div class="code-line" data-line="0"><span class="comment">// Fisher-Yates Shuffle Algorithm</span></div>
+                <div class="code-line" data-line="1"><span class="keyword">function</span> <span class="function">fisherYatesShuffle</span>(<span class="variable">array</span>) {</div>
+                <div class="code-line" data-line="2">    <span class="comment">// Start from the last element</span></div>
+                <div class="code-line" data-line="3">    <span class="keyword">for</span> (<span class="keyword">let</span> <span class="variable">i</span> = <span class="variable">array</span>.<span class="variable">length</span> - <span class="number">1</span>; <span class="variable">i</span> > <span class="number">0</span>; <span class="variable">i</span>--) {</div>
+                <div class="code-line" data-line="4">        <span class="comment">// Pick a random index from 0 to i</span></div>
+                <div class="code-line" data-line="5">        <span class="keyword">const</span> <span class="variable">randomIndex</span> = <span class="function">Math.floor</span>(<span class="function">Math.random</span>() * (<span class="variable">i</span> + <span class="number">1</span>));</div>
+                <div class="code-line" data-line="6">        <span class="comment">// Swap elements at i and randomIndex</span></div>
+                <div class="code-line" data-line="7">        [<span class="variable">array</span>[<span class="variable">i</span>], <span class="variable">array</span>[<span class="variable">randomIndex</span>]] = [<span class="variable">array</span>[<span class="variable">randomIndex</span>], <span class="variable">array</span>[<span class="variable">i</span>]];</div>
+                <div class="code-line" data-line="8">    }</div>
+                <div class="code-line" data-line="9">    <span class="keyword">return</span> <span class="variable">array</span>;</div>
+                <div class="code-line" data-line="10">}</div>
+            </div>
+            
+            <div class="info-panel">
+                <h3>Algorithm Explanation:</h3>
+                <p>The Fisher-Yates shuffle ensures each permutation is equally likely by:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Starting from the last element</li>
+                    <li>Picking a random element from the unshuffled portion</li>
+                    <li>Swapping with the current element</li>
+                    <li>Moving to the next element (backwards)</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(1)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let array = [];
+        let isShuffling = false;
+        let currentStep = 0;
+        
+        // Initialize array
+        function generateNewArray() {
+            if (isShuffling) return;
+            array = [];
+            const size = Math.floor(Math.random() * 6) + 6; // 6-11 elements
+            for (let i = 1; i <= size; i++) {
+                array.push(i);
+            }
+            renderArray();
+            clearCodeHighlight();
+            updateStatus("New array generated");
+        }
+        
+        function resetArray() {
+            if (isShuffling) return;
+            array = [];
+            for (let i = 1; i <= 8; i++) {
+                array.push(i);
+            }
+            renderArray();
+            clearCodeHighlight();
+            updateStatus("Array reset to original order");
+        }
+        
+        function renderArray() {
+            const container = document.getElementById('arrayContainer');
+            container.innerHTML = '';
+            
+            array.forEach((value, index) => {
+                const element = document.createElement('div');
+                element.className = 'array-element';
+                element.textContent = value;
+                element.id = `element-${index}`;
+                container.appendChild(element);
+            });
+        }
+        
+        function highlightElement(index, className) {
+            const element = document.getElementById(`element-${index}`);
+            if (element) {
+                element.classList.add(className);
+            }
+        }
+        
+        function clearHighlights() {
+            document.querySelectorAll('.array-element').forEach(el => {
+                el.classList.remove('current', 'selected', 'swapping');
+            });
+        }
+        
+        function highlightCodeLine(lineNumber) {
+            clearCodeHighlight();
+            const line = document.querySelector(`[data-line="${lineNumber}"]`);
+            if (line) {
+                line.classList.add('executing');
+            }
+        }
+        
+        function clearCodeHighlight() {
+            document.querySelectorAll('.code-line').forEach(line => {
+                line.classList.remove('highlight', 'executing');
+            });
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        async function startShuffle() {
+            if (isShuffling || array.length === 0) return;
+            
+            isShuffling = true;
+            updateStatus("Starting Fisher-Yates shuffle...");
+            
+            // Highlight function declaration
+            highlightCodeLine(1);
+            await sleep(1000);
+            
+            // Start the main loop
+            highlightCodeLine(3);
+            await sleep(1000);
+            
+            for (let i = array.length - 1; i > 0; i--) {
+                clearHighlights();
+                
+                // Highlight current element
+                highlightElement(i, 'current');
+                updateStatus(`Processing index ${i} (value: ${array[i]})`);
+                
+                // Highlight loop condition check
+                highlightCodeLine(3);
+                await sleep(800);
+                
+                // Highlight random index generation
+                highlightCodeLine(5);
+                await sleep(800);
+                
+                // Generate random index
+                const randomIndex = Math.floor(Math.random() * (i + 1));
+                
+                // Highlight the selected random element
+                highlightElement(randomIndex, 'selected');
+                updateStatus(`Random index: ${randomIndex} (value: ${array[randomIndex]})`);
+                await sleep(1000);
+                
+                // Highlight swap operation
+                highlightCodeLine(7);
+                await sleep(800);
+                
+                // Show swapping animation
+                highlightElement(i, 'swapping');
+                highlightElement(randomIndex, 'swapping');
+                updateStatus(`Swapping ${array[i]} ↔ ${array[randomIndex]}`);
+                await sleep(1000);
+                
+                // Perform the swap
+                [array[i], array[randomIndex]] = [array[randomIndex], array[i]];
+                
+                // Re-render array to show the swap
+                renderArray();
+                await sleep(500);
+            }
+            
+            // Highlight loop end
+            highlightCodeLine(8);
+            await sleep(800);
+            
+            // Highlight return statement
+            highlightCodeLine(9);
+            await sleep(800);
+            
+            clearHighlights();
+            clearCodeHighlight();
+            updateStatus("Shuffle completed! Array is now randomized.");
+            isShuffling = false;
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initialize with default array
+        resetArray();
+    </script>
+</body>
+</html>
