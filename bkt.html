@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Knowledge Tracing (BKT) Model Visualizer</title>
+    <link rel="stylesheet" href="/css/bkt.css">
+</head>
+<body>
+    <div class="header">
+        <h1 class="main-title">🧠 Bayesian Knowledge Tracing (BKT)</h1>
+        <p class="subtitle">Interactive Model Visualization for Student Learning Assessment</p>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h2 class="panel-title">📊 Model Parameters</h2>
+            
+            <div class="parameters-grid">
+                <div class="parameter-item">
+                    <div class="parameter-label">
+                        <span>🎯</span>
+                        <span>Prior Knowledge (P(L₀))</span>
+                    </div>
+                    <input type="range" class="parameter-input" id="priorKnowledge" min="0" max="1" step="0.01" value="0.1">
+                    <div class="parameter-value" id="priorValue">0.10</div>
+                </div>
+                
+                <div class="parameter-item">
+                    <div class="parameter-label">
+                        <span>📈</span>
+                        <span>Learn Rate (P(T))</span>
+                    </div>
+                    <input type="range" class="parameter-input" id="learnRate" min="0" max="1" step="0.01" value="0.3">
+                    <div class="parameter-value" id="learnValue">0.30</div>
+                </div>
+                
+                <div class="parameter-item">
+                    <div class="parameter-label">
+                        <span>🤔</span>
+                        <span>Guess Rate (P(G))</span>
+                    </div>
+                    <input type="range" class="parameter-input" id="guessRate" min="0" max="1" step="0.01" value="0.25">
+                    <div class="parameter-value" id="guessValue">0.25</div>
+                </div>
+                
+                <div class="parameter-item">
+                    <div class="parameter-label">
+                        <span>😓</span>
+                        <span>Slip Rate (P(S))</span>
+                    </div>
+                    <input type="range" class="parameter-input" id="slipRate" min="0" max="1" step="0.01" value="0.1">
+                    <div class="parameter-value" id="slipValue">0.10</div>
+                </div>
+            </div>
+
+            <div class="knowledge-state">
+                <h3>Current Knowledge State</h3>
+                <div class="knowledge-circle" id="knowledgeCircle">
+                    <span class="knowledge-text" id="knowledgeText">10%</span>
+                </div>
+                <p>Probability student has mastered the skill</p>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="resetSimulation()">🔄 Reset</button>
+                <button class="btn" onclick="randomizeParameters()">🎲 Random Parameters</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">🎯 Practice Problems</h2>
+            
+            <div class="problem-sequence" id="problemSequence">
+                <!-- Problems will be generated here -->
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Knowledge Probability Over Time</div>
+                <canvas class="chart-canvas" id="knowledgeChart"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4299e1;"></div>
+                    <span>Knowledge Probability</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #48bb78;"></div>
+                    <span>Correct Response</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f56565;"></div>
+                    <span>Incorrect Response</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="model-explanation">
+        <h2 class="panel-title">📚 BKT Model Explanation</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px;">
+            <div>
+                <h3 style="color: #667eea; margin-bottom: 15px;">Core Concept</h3>
+                <p style="line-height: 1.6; margin-bottom: 15px;">
+                    Bayesian Knowledge Tracing models student learning as a Hidden Markov Model where the student's knowledge state (Known/Unknown) is hidden, but we can observe their responses to problems.
+                </p>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">Key Parameters</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>P(L₀):</strong> Initial probability of knowing the skill</li>
+                    <li><strong>P(T):</strong> Probability of learning the skill on each opportunity</li>
+                    <li><strong>P(G):</strong> Probability of guessing correctly when unknown</li>
+                    <li><strong>P(S):</strong> Probability of slipping when known</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 style="color: #667eea; margin-bottom: 15px;">Update Formulas</h3>
+                
+                <div class="formula-box">
+                    <div class="formula">
+                        <strong>After Correct Response:</strong><br>
+                        P(L|correct) = P(L) × (1 - P(S)) / P(correct)
+                    </div>
+                </div>
+                
+                <div class="formula-box">
+                    <div class="formula">
+                        <strong>After Incorrect Response:</strong><br>
+                        P(L|incorrect) = P(L) × P(S) / P(incorrect)
+                    </div>
+                </div>
+                
+                <div class="formula-box">
+                    <div class="formula">
+                        <strong>Learning Update:</strong><br>
+                        P(L_{n+1}) = P(L_n) + (1 - P(L_n)) × P(T)
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="background: #e6f3ff; padding: 20px; border-radius: 10px; border-left: 4px solid #4299e1;">
+            <h3 style="color: #2d5a87; margin-bottom: 10px;">🎯 How to Use This Visualizer</h3>
+            <p style="line-height: 1.6;">
+                1. Adjust the model parameters using the sliders<br>
+                2. Click "Correct" or "Incorrect" for each practice problem<br>
+                3. Watch how the knowledge probability updates in real-time<br>
+                4. Observe the learning curve in the chart below
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // BKT Model State
+        let bktState = {
+            priorKnowledge: 0.1,
+            learnRate: 0.3,
+            guessRate: 0.25,
+            slipRate: 0.1,
+            currentKnowledge: 0.1,
+            problemCount: 0,
+            responses: [],
+            knowledgeHistory: [0.1]
+        };
+
+        // Chart setup
+        let chart = null;
+        let chartCanvas = null;
+        let chartCtx = null;
+
+        // Initialize the application
+        function init() {
+            setupEventListeners();
+            generateProblems();
+            updateKnowledgeDisplay();
+            initChart();
+        }
+
+        function setupEventListeners() {
+            // Parameter sliders
+            document.getElementById('priorKnowledge').addEventListener('input', updatePriorKnowledge);
+            document.getElementById('learnRate').addEventListener('input', updateLearnRate);
+            document.getElementById('guessRate').addEventListener('input', updateGuessRate);
+            document.getElementById('slipRate').addEventListener('input', updateSlipRate);
+        }
+
+        function updatePriorKnowledge(e) {
+            bktState.priorKnowledge = parseFloat(e.target.value);
+            document.getElementById('priorValue').textContent = bktState.priorKnowledge.toFixed(2);
+            if (bktState.problemCount === 0) {
+                bktState.currentKnowledge = bktState.priorKnowledge;
+                bktState.knowledgeHistory = [bktState.priorKnowledge];
+                updateKnowledgeDisplay();
+                updateChart();
+            }
+        }
+
+        function updateLearnRate(e) {
+            bktState.learnRate = parseFloat(e.target.value);
+            document.getElementById('learnValue').textContent = bktState.learnRate.toFixed(2);
+        }
+
+        function updateGuessRate(e) {
+            bktState.guessRate = parseFloat(e.target.value);
+            document.getElementById('guessValue').textContent = bktState.guessRate.toFixed(2);
+        }
+
+        function updateSlipRate(e) {
+            bktState.slipRate = parseFloat(e.target.value);
+            document.getElementById('slipValue').textContent = bktState.slipRate.toFixed(2);
+        }
+
+        function generateProblems() {
+            const container = document.getElementById('problemSequence');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 10; i++) {
+                const problemDiv = document.createElement('div');
+                problemDiv.className = 'problem-item';
+                problemDiv.id = `problem-${i}`;
+                
+                if (i === bktState.problemCount + 1) {
+                    problemDiv.classList.add('current');
+                }
+                
+                problemDiv.innerHTML = `
+                    <div class="problem-number">${i}</div>
+                    <div class="problem-response">
+                        <button class="response-btn" onclick="submitResponse(${i}, true)" ${i <= bktState.problemCount ? 'disabled' : ''}>
+                            ✓ Correct
+                        </button>
+                        <button class="response-btn" onclick="submitResponse(${i}, false)" ${i <= bktState.problemCount ? 'disabled' : ''}>
+                            ✗ Incorrect
+                        </button>
+                    </div>
+                    <div class="knowledge-probability" id="prob-${i}">
+                        ${i === 1 ? (bktState.currentKnowledge * 100).toFixed(1) + '%' : ''}
+                    </div>
+                `;
+                
+                container.appendChild(problemDiv);
+            }
+        }
+
+        function submitResponse(problemNum, isCorrect) {
+            if (problemNum !== bktState.problemCount + 1) return;
+            
+            // Update BKT model
+            updateBKTModel(isCorrect);
+            
+            // Update UI
+            const problemDiv = document.getElementById(`problem-${problemNum}`);
+            const buttons = problemDiv.querySelectorAll('.response-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            buttons[isCorrect ? 0 : 1].classList.add(isCorrect ? 'correct' : 'incorrect');
+            
+            // Update probability display
+            document.getElementById(`prob-${problemNum}`).textContent = 
+                (bktState.currentKnowledge * 100).toFixed(1) + '%';
+            
+            // Move to next problem
+            problemDiv.classList.remove('current');
+            bktState.problemCount++;
+            
+            if (bktState.problemCount < 10) {
+                document.getElementById(`problem-${bktState.problemCount + 1}`).classList.add('current');
+                document.getElementById(`prob-${bktState.problemCount + 1}`).textContent = 
+                    (bktState.currentKnowledge * 100).toFixed(1) + '%';
+            }
+            
+            updateKnowledgeDisplay();
+            updateChart();
+        }
+
+        function updateBKTModel(isCorrect) {
+            const P_L = bktState.currentKnowledge;
+            const P_G = bktState.guessRate;
+            const P_S = bktState.slipRate;
+            const P_T = bktState.learnRate;
+            
+            // Calculate probability of correct response
+            const P_correct = P_L * (1 - P_S) + (1 - P_L) * P_G;
+            const P_incorrect = P_L * P_S + (1 - P_L) * (1 - P_G);
+            
+            // Update knowledge probability based on response
+            if (isCorrect) {
+                bktState.currentKnowledge = (P_L * (1 - P_S)) / P_correct;
+            } else {
+                bktState.currentKnowledge = (P_L * P_S) / P_incorrect;
+            }
+            
+            // Apply learning
+            bktState.currentKnowledge = bktState.currentKnowledge + (1 - bktState.currentKnowledge) * P_T;
+            
+            // Store response and knowledge state
+            bktState.responses.push(isCorrect);
+            bktState.knowledgeHistory.push(bktState.currentKnowledge);
+        }
+
+        function updateKnowledgeDisplay() {
+            const circle = document.getElementById('knowledgeCircle');
+            const text = document.getElementById('knowledgeText');
+            const percentage = bktState.currentKnowledge * 100;
+            
+            text.textContent = percentage.toFixed(1) + '%';
+            
+            // Update circle color based on knowledge level
+            const hue = percentage * 1.2; // 0-120 (red to green)
+            circle.style.background = `conic-gradient(from 0deg, hsl(${hue}, 70%, 60%) ${percentage * 3.6}deg, #e2e8f0 0deg)`;
+        }
+
+        function initChart() {
+            chartCanvas = document.getElementById('knowledgeChart');
+            chartCtx = chartCanvas.getContext('2d');
+            updateChart();
+        }
+
+        function updateChart() {
+            const canvas = chartCanvas;
+            const ctx = chartCtx;
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            
+            // Horizontal lines
+            for (let i = 0; i <= 10; i++) {
+                const y = (height - 40) * (1 - i / 10) + 20;
+                ctx.beginPath();
+                ctx.moveTo(40, y);
+                ctx.lineTo(width - 20, y);
+                ctx.stroke();
+                
+                // Y-axis labels
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText((i * 10) + '%', 35, y + 4);
+            }
+            
+            // Vertical lines
+            const maxProblems = Math.max(10, bktState.knowledgeHistory.length);
+            for (let i = 0; i <= maxProblems; i++) {
+                const x = (width - 60) * (i / maxProblems) + 40;
+                ctx.beginPath();
+                ctx.moveTo(x, 20);
+                ctx.lineTo(x, height - 20);
+                ctx.stroke();
+                
+                // X-axis labels
+                if (i % 2 === 0) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(i.toString(), x, height - 5);
+                }
+            }
+            
+            // Draw knowledge probability line
+            if (bktState.knowledgeHistory.length > 1) {
+                ctx.strokeStyle = '#4299e1';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                for (let i = 0; i < bktState.knowledgeHistory.length; i++) {
+                    const x = (width - 60) * (i / (maxProblems)) + 40;
+                    const y = (height - 40) * (1 - bktState.knowledgeHistory[i]) + 20;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw points
+                for (let i = 0; i < bktState.knowledgeHistory.length; i++) {
+                    const x = (width - 60) * (i / (maxProblems)) + 40;
+                    const y = (height - 40) * (1 - bktState.knowledgeHistory[i]) + 20;
+                    
+                    ctx.fillStyle = '#4299e1';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw response indicators
+                    if (i > 0 && i <= bktState.responses.length) {
+                        const isCorrect = bktState.responses[i - 1];
+                        ctx.fillStyle = isCorrect ? '#48bb78' : '#f56565';
+                        ctx.beginPath();
+                        ctx.arc(x, y - 15, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                        
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(isCorrect ? '✓' : '✗', x, y - 11);
+                    }
+                }
+            }
+        }
+
+        function resetSimulation() {
+            bktState.currentKnowledge = bktState.priorKnowledge;
+            bktState.problemCount = 0;
+            bktState.responses = [];
+            bktState.knowledgeHistory = [bktState.priorKnowledge];
+            
+            generateProblems();
+            updateKnowledgeDisplay();
+            updateChart();
+        }
+
+        function randomizeParameters() {
+            // Generate reasonable random parameters
+            const prior = Math.random() * 0.3; // 0-30%
+            const learn = 0.1 + Math.random() * 0.4; // 10-50%
+            const guess = 0.1 + Math.random() * 0.3; // 10-40%
+            const slip = Math.random() * 0.2; // 0-20%
+            
+            document.getElementById('priorKnowledge').value = prior;
+            document.getElementById('learnRate').value = learn;
+            document.getElementById('guessRate').value = guess;
+            document.getElementById('slipRate').value = slip;
+            
+            bktState.priorKnowledge = prior;
+            bktState.learnRate = learn;
+            bktState.guessRate = guess;
+            bktState.slipRate = slip;
+            
+            document.getElementById('priorValue').textContent = prior.toFixed(2);
+            document.getElementById('learnValue').textContent = learn.toFixed(2);
+            document.getElementById('guessValue').textContent = guess.toFixed(2);
+            document.getElementById('slipValue').textContent = slip.toFixed(2);
+            
+            resetSimulation();
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
